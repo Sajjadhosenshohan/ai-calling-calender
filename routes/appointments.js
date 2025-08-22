@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 // POST /api/appointment - Create or update the single appointment
 router.post('/', async (req, res) => {
   try {
-    const { summary, description, start, end } = req.body;
+    const { summary, description, start, end, } = req.body;
     
     // Validate required fields
     if (!summary || !start || !end) {
@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
         dateTime: end.dateTime,
         timeZone: end.timeZone || 'America/Los_Angeles'
       },
-    //   attendees: attendees || [],
+      attendees:  [],
       reminders: {
         useDefault: false,
         overrides: [
