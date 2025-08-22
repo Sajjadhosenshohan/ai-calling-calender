@@ -112,25 +112,5 @@ router.get('/oauth-callback', async (req, res) => {
   }
 });
 
-// One-time setup: Exchange authorization code for tokens
-router.post('/setup/tokens', async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code) {
-      return res.status(400).json({ error: 'Authorization code required' });
-    }
-    
-    const tokens = await calendarService.exchangeCodeForTokens(code);
-    res.json({ 
-      message: 'Tokens obtained successfully',
-      refresh_token: tokens.refresh_token,
-      access_token: tokens.access_token
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
 
 module.exports = router;
