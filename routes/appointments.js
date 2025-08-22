@@ -36,11 +36,11 @@ router.post('/', async (req, res) => {
       description: description || '',
       start: {
         dateTime: start.dateTime,
-        timeZone: start.timeZone || 'America/Los_Angeles'
+        timeZone: start.timeZone || 'Asia/Dhaka'
       },
       end: {
         dateTime: end.dateTime,
-        timeZone: end.timeZone || 'America/Los_Angeles'
+        timeZone: end.timeZone || 'Asia/Dhaka'
       },
       attendees:  [],
       reminders: {

@@ -1,31 +1,40 @@
 const { google } = require("googleapis");
 const path = require("path");
 
-// Service Account Authentication
+// Service Account Authentication with domain-wide delegation
 const auth = new google.auth.GoogleAuth({
   keyFile: path.join(__dirname, "../credentials/service-account-key.json"),
   scopes: ["https://www.googleapis.com/auth/calendar"],
 });
 
+// If you need to impersonate a user (for GSuite domains)
+const authWithImpersonation = new google.auth.JWT({
+  keyFile: path.join(__dirname, "../credentials/service-account-key.json"),
+  scopes: ["https://www.googleapis.com/auth/calendar"],
+  subject: "mdshohansajjad@gmail.com", // The user to impersonate
+});
+
 // Initialize Google Calendar API
-const calendar = google.calendar({ version: "v3", auth });
+const calendar = google.calendar({ version: "v3", auth: authWithImpersonation });
 
 class GoogleCalendarService {
   constructor() {
     this.calendarId = "mdshohansajjad@gmail.com";
-    this.currentAppointmentId = null; // Track the single appointment
+    this.currentAppointmentId = null;
   }
 
   // Create or update the single appointment
   async setAppointment(eventData) {
     try {
       let response;
-      // const requestId = `appointment_${Date.now()}`;
+      const requestId = `appointment_${Date.now()}`;
 
       const conferenceData = {
         createRequest: {
-          requestId: "unique-request-id-" + Date.now(),
-          // No type specified - Google will choose the default
+          requestId: requestId,
+          conferenceSolutionKey: {
+            type: "hangoutsMeet"
+          }
         },
       };
 
@@ -40,7 +49,6 @@ class GoogleCalendarService {
           },
           conferenceDataVersion: 1,
         });
-        this.currentAppointmentId = response.data.id;
       } else {
         // Create new appointment
         response = await calendar.events.insert({
@@ -50,11 +58,12 @@ class GoogleCalendarService {
             conferenceData: conferenceData,
           },
           conferenceDataVersion: 1,
+          sendUpdates: "all", // Send notifications to attendees
         });
-        this.currentAppointmentId = response.data.id;
       }
-
-      // console.log("Appointment saved successfully:", response.data);
+      
+      this.currentAppointmentId = response.data.id;
+      console.log("Appointment saved successfully with Meet link:", response.data.hangoutLink);
       return response.data;
     } catch (error) {
       console.error("Error setting appointment:", error.message);
@@ -65,7 +74,7 @@ class GoogleCalendarService {
     }
   }
 
-  // Get the current appointment
+  // Other methods remain the same...
   async getAppointment() {
     try {
       if (!this.currentAppointmentId) {
@@ -80,18 +89,14 @@ class GoogleCalendarService {
       return response.data;
     } catch (error) {
       console.error("Error getting appointment:", error.message);
-
-      // If appointment doesn't exist anymore, reset the ID
       if (error.code === 404) {
         this.currentAppointmentId = null;
         return { message: "Appointment not found, was it deleted?" };
       }
-
       throw error;
     }
   }
 
-  // Cancel the current appointment
   async cancelAppointment() {
     try {
       if (!this.currentAppointmentId) {
@@ -107,18 +112,14 @@ class GoogleCalendarService {
       return { message: "Appointment successfully cancelled" };
     } catch (error) {
       console.error("Error cancelling appointment:", error.message);
-
-      // If appointment doesn't exist, reset the ID
       if (error.code === 404) {
         this.currentAppointmentId = null;
         return { message: "Appointment was already deleted" };
       }
-
       throw error;
     }
   }
 
-  // Clear the current appointment ID without deleting from calendar
   clearAppointment() {
     this.currentAppointmentId = null;
     return { message: "Appointment reference cleared" };
